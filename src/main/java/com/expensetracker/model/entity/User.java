@@ -21,6 +21,7 @@ public class User extends BaseEntity{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
     private String name;
+    @Column(nullable = false, unique = true)
     private String email;
     private String password;
     @Enumerated(EnumType.STRING)

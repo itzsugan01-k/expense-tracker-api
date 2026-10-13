@@ -65,7 +65,7 @@ public class ExpenseController {
             @ApiResponse(responseCode = "404", description = "Expense not found")
     })
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('USER','ADMIN')")
     public ResponseEntity<Void> deleteExpenseById(@PathVariable int id){
         expenseService.deleteExpense(id);
         return ResponseEntity.noContent().build();

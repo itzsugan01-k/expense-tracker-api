@@ -32,6 +32,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -104,12 +106,30 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     @Transactional
     public void deleteExpense(int id) {
-        Expense expense = repository.findByIdAndUser
-                (id, helper.getCurrentUser()).orElseThrow(() -> new ExpenseNotFoundException(id));
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        boolean isAdmin = authentication != null &&
+                authentication.getAuthorities().stream()
+                        .anyMatch(authority ->
+                                "ROLE_ADMIN".equals(authority.getAuthority()));
+
+        Expense expense;
+
+        if (isAdmin) {
+            // Admin can delete any expense.
+            expense = repository.findById(id)
+                    .orElseThrow(() -> new ExpenseNotFoundException(id));
+        } else {
+            // Normal user can delete only their own expense.
+            expense = repository.findByIdAndUser(
+                            id, helper.getCurrentUser())
+                    .orElseThrow(() -> new ExpenseNotFoundException(id));
+        }
+
         repository.delete(expense);
-
     }
-
     @Override
     public List<ExpenseResponse> searchByDescription(String description) {
         List<Expense> expenses = repository.findByDescriptionContainingIgnoreCaseAndUser
